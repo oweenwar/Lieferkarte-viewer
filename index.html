@@ -14,28 +14,32 @@
     --card-bd:#0002;
     --shadow:0 2px 10px #0002;
     --radius:14px;
-    --pad:14px;
   }
   html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
-  /* Layout: mapa u góry, legenda pod spodem */
   .wrap{display:flex;flex-direction:column;height:100%}
-  #map{height:70vh}              /* desktop */
+  #map{height:70vh}
   .legend-wrap{flex:1;overflow:auto;background:#fafafa;border-top:1px solid #eee}
 
-  /* Karta tytułowa na mapie */
+  /* Karta tytułowa – PRAWA strona */
   .titleCard{
-    position:absolute;left:12px;top:12px;z-index:1000;
+    position:absolute;right:12px;top:12px;z-index:1000;
     background:var(--card-bg);border:1px solid var(--card-bd);
     border-radius:var(--radius);box-shadow:var(--shadow);
     padding:12px 14px;max-width:min(92vw,520px)
   }
   .t-h1{margin:0 0 2px 0;font-size:22px;font-weight:800}
-  .t-sub{font-size:13px;color:#666;margin-bottom:2px}
-  .t-small{font-size:13px;color:#111}
+  .t-small{font-size:14px;color:#111;margin:0}
 
-  /* Bloki legendy */
+  /* Legenda (na dole) */
   .container{max-width:1100px;margin:12px auto;padding:0 12px}
-  h2.lg{margin:10px 0 8px 0;font-size:20px}
+  .legendHeader{
+    display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;
+    margin:10px 0 8px 0
+  }
+  .legendHeader h2{margin:0;font-size:20px}
+  .legendInline{
+    font-size:14px;color:#333
+  }
   .box{
     background:#fff;border:1px solid var(--card-bd);border-radius:12px;
     box-shadow:var(--shadow);padding:12px 14px;margin:10px 0
@@ -52,18 +56,17 @@
   }
   .num.blue{background:#2196F3}.num.orange{background:#FF9800}.num.red{background:#F44336}.num.out{background:#777}
 
-  /* Mobile – więcej miejsca dla mapy, mniejsze karty/napisy */
+  /* Mobile – extra mały label + więcej mapy, legenda max ~40vh */
   @media (max-width: 768px){
-    #map{height:65vh} /* więcej mapy; legenda < 40% */
-    .titleCard{padding:8px 10px;border-radius:12px}
-    .t-h1{font-size:16px;margin:0 0 1px 0}
-    .t-sub{font-size:12px}
+    #map{height:65vh}
+    .titleCard{padding:6px 8px;border-radius:12px}
+    .t-h1{font-size:14px;margin:0}
     .t-small{font-size:12px}
-
     .container{padding:0 10px}
-    h2.lg{font-size:18px;margin:8px 0}
-    .box{padding:10px 12px;margin:8px 0}
-    .box p{font-size:14px;line-height:1.35;margin:6px 0 0 0}
+    .legendHeader h2{font-size:16px}
+    .legendInline{font-size:12px}
+    .box{padding:8px 10px;margin:6px 0}
+    .box p{font-size:13px;line-height:1.35;margin:4px 0 0 0}
     .legend-wrap{max-height:40vh}
   }
 </style>
@@ -72,9 +75,15 @@
 
 <div class="wrap">
   <div id="map"></div>
+
   <div class="legend-wrap">
     <div class="container">
-      <h2 class="lg">Liefergebiete</h2>
+
+      <!-- Nagłówek legendy + skrót stref -->
+      <div class="legendHeader">
+        <h2>Liefergebiete</h2>
+        <div class="legendInline">– 🔵 15€ · 🟠 20€ · 🔴 25€ · ⚪ 35€ (Außerhalb)</div>
+      </div>
 
       <div class="box">
         <strong><span class="dot blue"></span>15 € – Zone</strong>
@@ -99,7 +108,13 @@
   </div>
 </div>
 
-<!-- Wbudowane dane projektu (Twoje) -->
+<!-- Mały tytuł po PRAWEJ (mobilny i desktop) -->
+<div class="titleCard">
+  <div class="t-h1">Mindestbestellwert</div>
+  <p class="t-small">Eiscafé Tiziano</p>
+</div>
+
+<!-- Wbudowane dane projektu -->
 <script id="project" type="application/json">
 {
   "zones": {
@@ -155,7 +170,7 @@
   const map=L.map('map',{
     preferCanvas:true,
     zoomControl:true,
-    doubleClickZoom:true   // 👈 włączone
+    doubleClickZoom:true
   }).setView(center, data.view?.zoom||12);
 
   // Warstwy bazowe
@@ -168,17 +183,7 @@
   const labelsOn = data.labelsOn!==false;
   (labelsOn ? (dark?darkWithLabels:lightWithLabels) : (dark?darkNoLabels:lightNoLabels)).addTo(map);
 
-  // Karta tytułowa (zmniejszona na mobile przez CSS)
-  const title = document.createElement('div');
-  title.className='titleCard';
-  title.innerHTML = `
-    <div class="t-h1">Mindestbestellwert</div>
-    <div class="t-sub">Liefergebiete – Viewer</div>
-    <div class="t-small">Eiscafé Tiziano · Marktstraße 18, Mayen</div>
-  `;
-  document.body.appendChild(title);
-
-  // Funkcje rysujące strefy z halo
+  // Strefy z halo
   function styledPolygon(latlngs,color){
     const halo=L.polygon(latlngs,{color:'#fff',weight:9,fill:false,opacity:1,smoothFactor:0});
     const line=L.polygon(latlngs,{color,weight:5,fill:false,opacity:1,smoothFactor:0});
@@ -190,7 +195,7 @@
 
   // Pinezka kawiarni
   const cafeIcon=L.divIcon({className:'',html:'<div style="width:18px;height:18px;border-radius:50%;background:#d32f2f;box-shadow:0 0 0 3px #fff;border:1px solid #0002"></div>',iconSize:[18,18],iconAnchor:[9,9]});
-  L.marker([50.32797,7.22277],{icon:cafeIcon}).addTo(map).bindPopup('<b>Eiscafé Tiziano</b><br>Marktstraße 18, Mayen');
+  L.marker([50.32797,7.22277],{icon:cafeIcon}).addTo(map).bindPopup('<b>Eiscafé Tiziano</b>');
 
   // Miejscowości (numery)
   const COLORS={'15':'blue','20':'orange','25':'red','OUT':'out'};
