@@ -1,79 +1,120 @@
 <!doctype html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>Eiscafé Tiziano – Liefergebiete (Viewer)</title>
 
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <style>
-  html,body,#map{height:100%;margin:0}
-  body{font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;}
+  :root{
+    --card-bg:#fff;
+    --card-bd:#0002;
+    --shadow:0 2px 10px #0002;
+    --radius:14px;
+  }
+  html,body{height:100%;margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial}
+  .wrap{display:flex;flex-direction:column;height:100%}
+  #map{height:70vh}
+  .legend-wrap{flex:1;overflow:auto;background:#fafafa;border-top:1px solid #eee}
 
-  /* mini-karta tytułowa (prawy górny róg) – kompakt na mobile */
+  /* Karta tytułowa – PRAWA strona */
   .titleCard{
-    position:absolute; right:12px; top:12px; z-index:1000;
-    background:#fff; border:1px solid #0002; border-radius:12px;
-    box-shadow:0 2px 8px #0003; padding:8px 10px; line-height:1.1;
+    position:absolute;right:12px;top:12px;z-index:1000;
+    background:var(--card-bg);border:1px solid var(--card-bd);
+    border-radius:var(--radius);box-shadow:var(--shadow);
+    padding:12px 14px;max-width:min(92vw,520px)
   }
-  .titleCard .t{font-weight:700; font-size:16px}
-  .titleCard .s{font-size:12px; color:#444}
+  .t-h1{margin:0 0 2px 0;font-size:22px;font-weight:800}
+  .t-small{font-size:14px;color:#111;margin:0}
 
-  /* blok legendy pod mapą */
-  .legendWrap{
-    position:relative; z-index:10; background:#fff; padding:10px 14px 16px;
-    border-top:1px solid #0001;
+  /* Legenda (na dole) */
+  .container{max-width:1100px;margin:12px auto;padding:0 12px}
+  .legendHeader{
+    display:flex;flex-wrap:wrap;gap:8px;align-items:baseline;
+    margin:10px 0 8px 0
   }
-  .legendWrap h2{margin:0 0 8px 0; font-size:22px}
-  /* jeden rząd kropek – powiększone, ale krótkie podpisy żeby się mieściło */
-  .legend-inline{
-    display:flex; align-items:center; gap:14px; white-space:nowrap;
-    overflow:auto; -webkit-overflow-scrolling:touch; padding:6px 2px 10px;
-    border-bottom:1px dashed #0001; margin-bottom:10px;
-    font-size:14px;
+  .legendHeader h2{margin:0;font-size:20px}
+  .legendInline{
+    font-size:14px;color:#333
   }
-  .ldot{display:inline-block; width:14px; height:14px; border-radius:50%; margin-right:6px; vertical-align:-2px; border:1px solid #0002; box-shadow:0 0 0 2px #fff;}
-  .b{background:#2196F3}.o{background:#FF9800}.r{background:#F44336}.g{background:#888}
+  .box{
+    background:#fff;border:1px solid var(--card-bd);border-radius:12px;
+    box-shadow:var(--shadow);padding:12px 14px;margin:10px 0
+  }
+  .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  .blue{background:#2196F3}.orange{background:#FF9800}.red{background:#F44336}.out{background:#777}
 
-  .legendList{display:grid; grid-template-columns:1fr; gap:10px}
-  .box{border:1px solid #0002; border-radius:12px; padding:12px; background:#fff; box-shadow:0 2px 6px #0001}
-  .box h3{margin:0 0 6px 0; font-size:17px}
-  .muted{color:#555; font-size:15px; line-height:1.45}
+  /* Numery na pinezkach */
+  .num{
+    display:flex;align-items:center;justify-content:center;
+    width:18px;height:18px;border-radius:50%;
+    color:#fff;font-weight:800;font-size:11px;line-height:1;
+    border:1px solid #0002; box-shadow:0 0 0 2px #fff;
+  }
+  .num.blue{background:#2196F3}.num.orange{background:#FF9800}.num.red{background:#F44336}.num.out{background:#777}
 
-  /* większe ekrany – dwie kolumny */
-  @media (min-width: 720px){
-    .legendList{grid-template-columns:1fr 1fr}
+  /* Mobile – extra mały label + więcej mapy, legenda max ~40vh */
+  @media (max-width: 768px){
+    #map{height:65vh}
+    .titleCard{padding:6px 8px;border-radius:12px}
+    .t-h1{font-size:14px;margin:0}
+    .t-small{font-size:12px}
+    .container{padding:0 10px}
+    .legendHeader h2{font-size:16px}
+    .legendInline{font-size:12px}
+    .box{padding:8px 10px;margin:6px 0}
+    .box p{font-size:13px;line-height:1.35;margin:4px 0 0 0}
+    .legend-wrap{max-height:40vh}
   }
 </style>
 </head>
 <body>
 
-<div id="map"></div>
+<div class="wrap">
+  <div id="map"></div>
 
-<!-- mały nagłówek w prawym górnym rogu -->
-<div class="titleCard">
-  <div class="t">Mindestbestellwert</div>
-  <div class="s">Eiscafé Tiziano</div>
-</div>
+  <div class="legend-wrap">
+    <div class="container">
 
-<!-- LEGENDA pod mapą -->
-<div class="legendWrap">
-  <h2>Liefergebiete</h2>
+      <!-- Nagłówek legendy + skrót stref -->
+      <div class="legendHeader">
+        <h2>Liefergebiete</h2>
+        <div class="legendInline">– 🔵 15€ · 🟠 20€ · 🔴 25€ · ⚪ 35€ (Außerhalb)</div>
+      </div>
 
-  <!-- jeden rząd: kropka + krótki opis; bez myślnika przed pierwszą -->
-  <div class="legend-inline">
-    <span><i class="ldot b"></i>15&nbsp;€</span>
-    <span>· <i class="ldot o"></i>20&nbsp;€</span>
-    <span>· <i class="ldot r"></i>25&nbsp;€</span>
-    <span>· <i class="ldot g"></i>35&nbsp;€ (Außerhalb)</span>
+      <div class="box">
+        <strong><span class="dot blue"></span>15 € – Zone</strong>
+        <p>Mayen, Alzheim, Hausen, Kürrenberg, Sankt Johann, Ettringen, Kottenheim</p>
+      </div>
+
+      <div class="box">
+        <strong><span class="dot orange"></span>20 € – Zone</strong>
+        <p>Kehrig, Monreal, Reudelsterz, Thür, Welling, Trimbs, Nitzstal</p>
+      </div>
+
+      <div class="box">
+        <strong><span class="dot red"></span>25 € – Zone</strong>
+        <p>Polch, Mertloch, Kollig, Gering, Kaifenheim, Weiler, Luxem, Hirten, Kirchwald, Rieden, Bell, Mendig, Volksfeld</p>
+      </div>
+
+      <div class="box">
+        <strong><span class="dot out"></span>Außerhalb – 35 €</strong>
+        <p>Langenfeld, Kempenich, Düngenheim, Anschau</p>
+      </div>
+    </div>
   </div>
-
-  <div class="legendList" id="legendList"></div>
 </div>
 
-<!-- Wbudowany projekt (dane) -->
+<!-- Mały tytuł po PRAWEJ (mobilny i desktop) -->
+<div class="titleCard">
+  <div class="t-h1">Mindestbestellwert</div>
+  <p class="t-small">Eiscafé Tiziano</p>
+</div>
+
+<!-- Wbudowane dane projektu -->
 <script id="project" type="application/json">
 {
   "zones": {
@@ -124,13 +165,25 @@
 (function(){
   const data = JSON.parse(document.getElementById('project').textContent);
 
-  /* MAPA */
+  // MAPA – podwójne tapnięcie przybliża
   const center=[data.view?.center?.lat||50.32797, data.view?.center?.lng||7.22277];
-  const map=L.map('map',{preferCanvas:true, zoomControl:true}).setView(center, data.view?.zoom||11);
+  const map=L.map('map',{
+    preferCanvas:true,
+    zoomControl:true,
+    doubleClickZoom:true
+  }).setView(center, data.view?.zoom||12);
 
-  const lightWithLabels=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OSM & Carto'});
-  lightWithLabels.addTo(map);
+  // Warstwy bazowe
+  const lightWithLabels=L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OpenStreetMap & Carto'});
+  const lightNoLabels =L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OpenStreetMap & Carto'});
+  const darkWithLabels =L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OpenStreetMap & Carto'});
+  const darkNoLabels  =L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png',{maxZoom:19,attribution:'© OpenStreetMap & Carto'});
 
+  const dark = (data.basePreset||'light')==='dark';
+  const labelsOn = data.labelsOn!==false;
+  (labelsOn ? (dark?darkWithLabels:lightWithLabels) : (dark?darkNoLabels:lightNoLabels)).addTo(map);
+
+  // Strefy z halo
   function styledPolygon(latlngs,color){
     const halo=L.polygon(latlngs,{color:'#fff',weight:9,fill:false,opacity:1,smoothFactor:0});
     const line=L.polygon(latlngs,{color,weight:5,fill:false,opacity:1,smoothFactor:0});
@@ -140,46 +193,24 @@
   styledPolygon((data.zones?.z20||[]).map(([a,b])=>[a,b]), '#FF9800');
   styledPolygon((data.zones?.z25||[]).map(([a,b])=>[a,b]), '#F44336');
 
-  /* NUMEROWANE MARKERY */
-  const COLORS={'15':'#2196F3','20':'#FF9800','25':'#F44336','OUT':'#777'};
-  function numIcon(n,zone){
-    const c=COLORS[zone]||'#777';
-    const html=`<div style="
-      width:18px;height:18px;border-radius:50%;background:${c};color:#fff;
-      font-weight:800;font-size:11px;line-height:18px;text-align:center;
-      border:1px solid #0002;box-shadow:0 0 0 2px #fff;">${n}</div>`;
-    return L.divIcon({className:'',html,iconSize:[18,18],iconAnchor:[9,9]});
-  }
+  // Pinezka kawiarni
+  const cafeIcon=L.divIcon({className:'',html:'<div style="width:18px;height:18px;border-radius:50%;background:#d32f2f;box-shadow:0 0 0 3px #fff;border:1px solid #0002"></div>',iconSize:[18,18],iconAnchor:[9,9]});
+  L.marker([50.32797,7.22277],{icon:cafeIcon}).addTo(map).bindPopup('<b>Eiscafé Tiziano</b>');
+
+  // Miejscowości (numery)
+  const COLORS={'15':'blue','20':'orange','25':'red','OUT':'out'};
+  const numIcon=(n,z)=>L.divIcon({className:'',html:`<div class="num ${COLORS[z]||'out'}">${n}</div>`,iconSize:[18,18],iconAnchor:[9,9]});
   (data.points||[]).forEach(p=>{
-    L.marker([p.lat,p.lon],{icon:numIcon(p.id,p.zone)}).addTo(map)
-     .bindTooltip(`${p.id} – ${p.name}`,{permanent:false,opacity:0.9});
+    L.marker([p.lat,p.lon],{icon:numIcon(p.id,p.zone)}).addTo(map).bindTooltip(`${p.id} – ${p.name}`,{permanent:false,opacity:0.9});
   });
 
-  /* DOPASUJ WIDOK */
+  // Dopasowanie widoku do całości
   try{
     const b=L.latLngBounds([]);
-    ['z15','z20','z25'].forEach(k=>{
-      (data.zones?.[k]||[]).forEach(([la,lo])=>b.extend([la,lo]));
-    });
+    ['z15','z20','z25'].forEach(k=> (data.zones?.[k]||[]).forEach(([la,lo])=>b.extend([la,lo])));
     (data.points||[]).forEach(p=>b.extend([p.lat,p.lon]));
-    map.fitBounds(b.pad(0.15));
+    map.fitBounds(b.pad(0.2));
   }catch(e){}
-
-  /* LEGENDA – z numerami */
-  const list=document.getElementById('legendList');
-  const groups={ '15':[], '20':[], '25':[], 'OUT':[] };
-  (data.points||[]).forEach(p=>groups[p.zone||'OUT'].push(p));
-  Object.values(groups).forEach(arr=>arr.sort((a,b)=>a.id-b.id));
-  function row(color,label,arr){
-    const dot = `<i class="ldot ${color}"></i>`;
-    const items = arr.map(p=>`${p.id} – ${p.name}`).join(', ');
-    return `<div class="box"><h3>${dot}${label}</h3><div class="muted">${items}</div></div>`;
-  }
-  list.innerHTML =
-    row('b','15 € – Zone', groups['15']) +
-    row('o','20 € – Zone', groups['20']) +
-    row('r','25 € – Zone', groups['25']) +
-    row('g','Außerhalb – 35 €', groups['OUT']);
 })();
 </script>
 </body>
